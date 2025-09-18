@@ -291,8 +291,7 @@ export async function updateProfile(req, res, next) {
 // getprofile
 export async function getProfile(req, res, next) {
   const { userId } = req.params;
-  const user = await userModel.findById(userId).select("name email age gender profileImage");
-  if (!user) {
+  const user = await userModel.findById(userId);
     throw new Error("user not found", { cause: 404 });
   }
   return res.status(200).json({ message: "success", user });
