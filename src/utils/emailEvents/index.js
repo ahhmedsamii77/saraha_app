@@ -27,8 +27,8 @@ eventEmitter.on("sendOtp", async (data) => {
   const { email, otp } = data;
   const isSend = await sendEmail({
     to: email,
-    subject: "otp",
-    html: `<p>${otp}</p>`
+    subject: "Forget passowrd",
+    html: emailTemplate({otp , subject: "Forget passowrd"})
   });
   if (!isSend) {
     throw new Error("Please enter exist email", { cause: 400 });
