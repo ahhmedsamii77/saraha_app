@@ -285,7 +285,7 @@ export async function updateProfile(req, res, next) {
     eventEmitter.emit("confirmEmail", { email });
   }
   await req.user.save();
-  return res.status(200).json({ message: "success" });
+  return res.status(200).json({ message: "success" , user: req.user });
 }
 
 // getprofile
