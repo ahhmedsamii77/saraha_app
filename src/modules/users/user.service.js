@@ -16,7 +16,12 @@ export async function signUp(req, res, next) {
   }
   const hashPassword = hash({ plaintext: password });
   const encryptionPhone = encryption({ plaintext: phone, secretkey: process.env.PHONE_KEY });
-  const { secure_url, public_id } = await cloudinary.uploader.upload(req.file.path, {
+  if (!req.file) {
+    return res.status(400).json({ message: "Image is required" });
+  }
+  const b64 = req.file.buffer.toString("base64");
+  const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+  const { secure_url, public_id } = await cloudinary.uploader.upload(dataURI, {
     folder: "users"
   });
   const user = await userModel.create({
