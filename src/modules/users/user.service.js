@@ -336,7 +336,9 @@ export async function unfreezeAccoount(req, res, next) {
 // update profile image
 export async function updateProfileImage(req, res, next) {
   await cloudinary.uploader.destroy(req.user.profileImage.public_id);
-  const { secure_url, public_id } = await cloudinary.uploader.upload(req.file.path, {
+  const b64 = req.file.buffer.toString("base64");
+  const dataURI = `data:${req.file.mimetype};base64,${b64}`;
+  const { secure_url, public_id } = await cloudinary.uploader.upload(dataURI, {
     folder: "users"
   });
   req.user.profileImage = {
