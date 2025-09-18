@@ -239,7 +239,7 @@ export async function forgetPassword(req, res, next) {
   const hashOtp = hash({ plaintext: otp });
   user.otp = hashOtp;
   await user.save();
-  return res.status(200).json({ message: "success" });
+  return res.status(200).json({ message: "Otp Sent to your email" });
 }
 
 // reset password
