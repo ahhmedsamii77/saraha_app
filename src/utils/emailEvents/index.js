@@ -10,7 +10,7 @@ export const eventEmitter = new EventEmitter();
 eventEmitter.on("confirmEmail", async (data) => {
   const { email, id } = data;
   const otp = nanoid(4);
-  const hashedOtp = hash({ plaintext: otp });
+  const hashedOtp = await hash({ plaintext: otp });
   await otpModel.create({ userId: id, otp: hashedOtp, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
   const isSend = await sendEmail({
     to: email,
