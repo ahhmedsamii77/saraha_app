@@ -291,7 +291,7 @@ export async function updateProfile(req, res, next) {
 // getprofile
 export async function getProfile(req, res, next) {
   const { userId } = req.params;
-  const user = await userModel.findById(userId);
+  const user = await userModel.findById(userId).select("-password -confirmed -isDeleted -isBanned -provider");
   if (!user) {
     throw new Error("user not found", { cause: 404 });
   }
