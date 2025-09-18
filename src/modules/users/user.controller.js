@@ -15,5 +15,5 @@ userRouter.patch("/update-profile", authentication, validation(UV.updateProfileS
 userRouter.get("/get-profile/:userId", validation(UV.getProfileSchema), US.getProfile);
 userRouter.get("/getUserData", authentication, US.getUserData);
 userRouter.delete("/freeze-account{/:userId}", authentication, US.freezeAccoount);
-userRouter.delete("/unfreeze-account{/:userId}", authentication, US.unfreezeAccoount);
+userRouter.patch("/unfreeze-account{/:userId}", authentication, US.unfreezeAccoount);
 userRouter.patch("/update-profileImage", authentication, Multer(allowedExtension.image).single("image"), US.updateProfileImage);
