@@ -4,6 +4,7 @@ import { sendEmail } from "../../service/sendEmail.js";
 import { hash } from "../index.js"
 import { nanoid } from "nanoid";
 import { otpModel } from "../../DB/models/otp.model.js";
+import { emailTemplate } from "../../service/email.template.js";
 export const eventEmitter = new EventEmitter();
 
 eventEmitter.on("confirmEmail", async (data) => {
@@ -13,8 +14,7 @@ eventEmitter.on("confirmEmail", async (data) => {
   await otpModel.create({ userId: id, otp: hashedOtp, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
   const isSend = await sendEmail({
     to: email,
-    subject: "Confirm Email",
-    html: `<p><strong>OTP:</strong> ${otp}</p>`
+    html: emailTemplate({otp , subject: "Confirm Email"})
   });
   if (!isSend) {
     throw new Error("Please enter exist email", { cause: 400 });
