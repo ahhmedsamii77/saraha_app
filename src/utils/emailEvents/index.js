@@ -14,6 +14,7 @@ eventEmitter.on("confirmEmail", async (data) => {
   await otpModel.create({ userId: id, otp: hashedOtp, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
   const isSend = await sendEmail({
     to: email,
+    subject: "Confirm Email",
     html: emailTemplate({otp , subject: "Confirm Email"})
   });
   if (!isSend) {

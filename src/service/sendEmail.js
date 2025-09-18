@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer"
-export async function sendEmail({ to, html }) {
+export async function sendEmail({ to, html ,subject  }) {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -10,6 +10,7 @@ export async function sendEmail({ to, html }) {
   const info = await transporter.sendMail({
     from: process.env.NODEMAILER_USER,
     to: to || process.env.NODEMAILER_USER,
+    subject: subject || "Hello ✔",
     html: html || "<b>Hello</b>"
   });
   if (info.accepted.length == 0) {
