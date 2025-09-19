@@ -258,7 +258,18 @@ export async function resetPassword(req, res, next) {
     password: hashPassword,
     $unset: { otp: "" }
   });
-  return res.status(200).json({ message: "success" });
+  const jwtid = nanoid();
+  const access_token = generateToken({
+    payload: { id: user._id },
+    signature: user.role == userRoles.user ? process.env.ACCESS_TOKEN_USER : process.env.ACCESS_TOKEN_ADMIN,
+    options: { expiresIn: "2h", jwtid }
+  });
+  const refersh_token = generateToken({
+    payload: { id: user._id },
+    signature: user.role == userRoles.user ? process.env.REFERSH_TOKEN_USER : process.env.REFERSH_TOKEN_ADMIN,
+    options: { expiresIn: "1y", jwtid }
+  });
+  return res.status(200).json({ message: "success" , access_token, refersh_token });
 }
 // updte profile
 export async function updateProfile(req, res, next) {
@@ -285,7 +296,7 @@ export async function updateProfile(req, res, next) {
     eventEmitter.emit("confirmEmail", { email });
   }
   await req.user.save();
-  return res.status(200).json({ message: "success" , user: req.user });
+  return res.status(200).json({ message: "success", user: req.user });
 }
 
 // getprofile
