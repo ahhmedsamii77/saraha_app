@@ -67,6 +67,7 @@ export async function signIn(req, res, next) {
     throw new Error("wrong password", { cause: 409 });
   }
   const jwtid = nanoid();
+  
   const access_token = generateToken({
     payload: { id: user._id },
     signature: user.role == userRoles.user ? process.env.ACCESS_TOKEN_USER : process.env.ACCESS_TOKEN_ADMIN,
