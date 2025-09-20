@@ -9,11 +9,11 @@ import cron from "node-cron"
 import { otpModel } from "./DB/models/otp.model.js";
 export default function bootstrap({ app, express }) {
   const limiter = rateLimit({
-    windowMs: 60 * 1000,
-    max: 5,
-    handler: (req, res, next, options) => {
-      res.status(400).json({ message: "Too many requests, please try again later." });
-    },
+    windowMs: 5 * 60 * 1000, // 5 minutes
+    max: 10, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: "Too many requests, please try again later.",
+    statusCode: 429,
     skipSuccessfulRequests: true
   });
 
