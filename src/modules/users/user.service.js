@@ -76,7 +76,7 @@ export async function confirmEmail(req, res, next) {
     await user.save();
     throw new Error("you have reached the maximum number of attempts login afer 5 minutes to get new otp", { cause: 400 });
   }
-  const isMatch = compare({ plaintext: otp, ciphertext: otpInDb.otp });
+  const isMatch = await compare({ plaintext: otp, ciphertext: otpInDb.otp });
   if (!isMatch) {
     otpInDb.attempts++;
     await otpInDb.save();
@@ -218,7 +218,7 @@ export async function loginWithGmail(req, res, next) {
 // update password
 export async function updatePassword(req, res, next) {
   const { oldPassword, newPassword } = req.body;
-  const isMatch = compare({ plaintext: oldPassword, ciphertext: req.user.password });
+  const isMatch = await compare({ plaintext: oldPassword, ciphertext: req.user.password });
   if (!isMatch) {
     throw new Error("wrong password", { cause: 409 });
   }
@@ -249,7 +249,7 @@ export async function resetPassword(req, res, next) {
   if (!user) {
     throw new Error("user not found or wrong otp", { cause: 404 });
   }
-  const isMatch = compare({ plaintext: otp, ciphertext: user.otp });
+  const isMatch = await compare({ plaintext: otp, ciphertext: user.otp });
   if (!isMatch) {
     throw new Error("wrong otp", { cause: 409 });
   }
