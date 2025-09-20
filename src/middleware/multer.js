@@ -2,7 +2,7 @@ import multer from "multer";
 import { nanoid } from "nanoid";
 import os from "node:os";
 export const allowedExtension = {
-  image: ["image/png", "image/webp", "image/jpeg", "image/gif", "image/png"]
+  image: ["image/png", "image/webp", "image/jpeg", "image/gif", "image/png" , "image/jpg"],
 }
 export function Multer(cusomExtension = []) {
   const storage = multer.diskStorage({
