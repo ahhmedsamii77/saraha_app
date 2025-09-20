@@ -59,11 +59,6 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "users"
   },
-  isBanned: {
-    type: Boolean,
-    default: false
-  },
-  bannedAt: Date,
   provider: {
     type: String,
     enum: Object.values(userProviders),

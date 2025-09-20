@@ -4,7 +4,6 @@ import { userModel, userProviders, userRoles } from "../../DB/models/user.model.
 import cloudinary from "../../utils/cloudinary/index.js";
 import { compare, decryption, encryption, eventEmitter, generateToken, hash, verifyToken } from "../../utils/index.js";
 import { revokeTokenModel } from "../../DB/models/revokeToken.model.js";
-import { otpModel } from "../../DB/models/otp.model.js";
 
 
 // signup
@@ -15,13 +14,11 @@ export async function signUp(req, res, next) {
     throw new Error("user already exists", { cause: 400 });
   }
   const hashPassword = await hash({ plaintext: password });
-  const encryptionPhone = encryption({ plaintext: phone, secretkey: process.env.PHONE_KEY });
-  if (!req.file) {
-    return res.status(400).json({ message: "Image is required" });
-  }
-  const b64 = req.file.buffer.toString("base64");
-  const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-  const { secure_url, public_id } = await cloudinary.uploader.upload(dataURI, {
+  const encryptionPhone = await encryption({ plaintext: phone, secretkey: process.env.PHONE_KEY });
+  const otp = customAlphabet("0123456789", 4)();
+  eventEmitter.emit("confirmEmail", { email, otp });
+  const hashedOtp = await hash({ plaintext: opt });
+  const { secure_url, public_id } = await cloudinary.uploader.upload(req.file.path, {
     folder: "users"
   });
   const user = await userModel.create({
@@ -29,6 +26,7 @@ export async function signUp(req, res, next) {
     email,
     password: hashPassword,
     age,
+    otp: hashedOtp,
     phone: encryptionPhone,
     gender,
     profileImage: {
@@ -36,9 +34,6 @@ export async function signUp(req, res, next) {
       public_id
     }
   });
-  
-  eventEmitter.emit("confirmEmail", { email, id: user._id });
- 
   return res.status(201).json({ message: "User created. Please check your email to confirm your account", user });
 }
 
@@ -46,51 +41,17 @@ export async function signUp(req, res, next) {
 // confirm email
 export async function confirmEmail(req, res, next) {
   const { email, otp } = req.body;
-  const user = await userModel.findOne({ email: email, confirmed: false });
+  const user = await userModel.findOne({ email });
   if (!user) {
-    throw new Error("user not found or already confirmed", { cause: 404 });
+    throw new Error("user not found", { cause: 404 });
   }
-  const otpInDb = await otpModel.findOne({ userId: user._id });
-  if (!otpInDb) {
-    throw new Error("otp not found", { cause: 404 });
-  }
-  if (user.isBanned) {
-    const banTime = user.bannedAt + 5 * 60 * 1000;
-    if (banTime > Date.now()) {
-      const remainingTime = Math.ceil((banTime - Date.now()) / 1000);
-      throw new Error("you are banned. Please try again in" + remainingTime + " seconds", { cause: 400 });
-    } else {
-      user.isBanned = false;
-      user.bannedAt = null;
-      await user.save();
-      eventEmitter.emit("confirmEmail", { email, id: user._id });
-      return res.status(200).json({ message: "otp sent to your email" });
-    }
-  }
-  if (otpInDb.expiresAt < Date.now()) {
-    await otpModel.deleteOne({ userId: user._id });
-    eventEmitter.emit("confirmEmail", { email, id: user._id });
-    throw new Error("otp expired and new code will be sent", { cause: 400 });
-  }
-
-  if (otpInDb.attempts >= 5) {
-    user.isBanned = true;
-    user.bannedAt = Date.now();
-    await user.save();
-    throw new Error("you have reached the maximum number of attempts. login after 5 minutes to get new otp", { cause: 400 });
-  }
-
-
-  const isMatch = await compare({ plaintext: otp, ciphertext: otpInDb.otp });
+  const isMatch = await compare({ plaintext: otp, ciphertext: user.otp });
   if (!isMatch) {
-    otpInDb.attempts++;
-    await otpInDb.save();
     throw new Error("wrong otp", { cause: 409 });
   }
-  await otpModel.deleteOne({ userId: user._id });
   user.confirmed = true;
   await user.save();
-  return res.status(200).json({ message: "Email confirmed" });
+  return res.status(200).json({ message: "email confirmed" });
 }
 
 // signin
@@ -99,21 +60,6 @@ export async function signIn(req, res, next) {
   const user = await userModel.findOne({ email, confirmed: true });
   if (!user) {
     throw new Error("user not found or not confirmed", { cause: 404 });
-  }
-  if (!user.confirmed) {
-    if (user.isBanned) {
-      const banTime = user.bannedAt + 5 * 60 * 1000;
-      if (banTime > Date.now()) {
-        const remainingTime = Math.ceil((banTime - Date.now()) / 1000);
-        throw new Error("you are banned. Please try again in" + remainingTime + " seconds", { cause: 400 });
-      } else {
-        user.isBanned = false;
-        user.bannedAt = null;
-        await user.save();
-        eventEmitter.emit("confirmEmail", { email, id: user._id });
-        return res.status(200).json({ message: "otp sent to your email" });
-      }
-    }
   }
   const isMatch = await compare({ plaintext: password, ciphertext: user.password });
   if (!isMatch) {
@@ -225,7 +171,7 @@ export async function updatePassword(req, res, next) {
   const { oldPassword, newPassword } = req.body;
   const isMatch = await compare({ plaintext: oldPassword, ciphertext: req.user.password });
   if (!isMatch) {
-    throw new Error("wrong password", { cause: 409 });
+    throw new Error("password and old password not match", { cause: 409 });
   }
   const hashPassword = await hash({ plaintext: newPassword });
   req.user.password = hashPassword;
@@ -240,7 +186,7 @@ export async function forgetPassword(req, res, next) {
     throw new Error("user not found", { cause: 404 });
   }
   const otp = customAlphabet("0123456789", 4)();
-  eventEmitter.emit("sendOtp", { email, otp });
+  eventEmitter.emit("forgetPassword", { email, otp });
   const hashOtp = await hash({ plaintext: otp });
   user.otp = hashOtp;
   await user.save();
@@ -276,7 +222,7 @@ export async function resetPassword(req, res, next) {
   });
   return res.status(200).json({ message: "success", access_token, refersh_token });
 }
-// updte profile
+// upadte profile
 export async function updateProfile(req, res, next) {
   const { name, email, age, phone, gender } = req.body;
   if (name) {
@@ -307,7 +253,7 @@ export async function updateProfile(req, res, next) {
 // getprofile
 export async function getProfile(req, res, next) {
   const { userId } = req.params;
-  const user = await userModel.findById(userId).select("-password -confirmed -isDeleted -isBanned -provider");
+  const user = await userModel.findById(userId).select("-password -confirmed -isDeleted -phone");
   if (!user) {
     throw new Error("user not found", { cause: 404 });
   }
@@ -352,9 +298,7 @@ export async function unfreezeAccoount(req, res, next) {
 // update profile image
 export async function updateProfileImage(req, res, next) {
   await cloudinary.uploader.destroy(req.user.profileImage.public_id);
-  const b64 = req.file.buffer.toString("base64");
-  const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-  const { secure_url, public_id } = await cloudinary.uploader.upload(dataURI, {
+  const { secure_url, public_id } = await cloudinary.uploader.upload(req.file.path, {
     folder: "users"
   });
   req.user.profileImage = {

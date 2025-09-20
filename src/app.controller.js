@@ -6,7 +6,6 @@ import { userRouter } from "./modules/users/user.controller.js";
 import { messageRouter } from "./modules/messages/message.controller.js";
 import helmet from "helmet";
 import cron from "node-cron"
-import { otpModel } from "./DB/models/otp.model.js";
 export default function bootstrap({ app, express }) {
   const limiter = rateLimit({
     windowMs: 5 * 60 * 1000, // 5 minutes
@@ -16,12 +15,8 @@ export default function bootstrap({ app, express }) {
     statusCode: 429,
     skipSuccessfulRequests: true
   });
-  
-  checkConnectionDB();
 
-  cron.schedule("*/1 * * * * *", () => {
-    otpModel.deleteMany({ expiresAt: { $lt: Date.now() } });
-  });
+  checkConnectionDB();
 
   app.use(helmet());
   app.use(limiter);

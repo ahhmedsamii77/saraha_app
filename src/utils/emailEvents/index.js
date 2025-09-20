@@ -3,15 +3,11 @@ import { EventEmitter } from "node:events";
 import { sendEmail } from "../../service/sendEmail.js";
 import { hash } from "../index.js"
 import { nanoid } from "nanoid";
-import { otpModel } from "../../DB/models/otp.model.js";
 import { emailTemplate } from "../../service/email.template.js";
 export const eventEmitter = new EventEmitter();
 
 eventEmitter.on("confirmEmail", async (data) => {
-  const { email, id } = data;
-  const otp = nanoid(4);
-  const hashedOtp = await hash({ plaintext: otp });
-  await otpModel.create({ userId: id, otp: hashedOtp, expiresAt: new Date(Date.now() + 5 * 60 * 1000) });
+  const { email, otp } = data;
   const isSend = await sendEmail({
     to: email,
     subject: "Confirm Email",
@@ -23,7 +19,7 @@ eventEmitter.on("confirmEmail", async (data) => {
 });
 
 
-eventEmitter.on("sendOtp", async (data) => {
+eventEmitter.on("forgetPassword", async (data) => {
   const { email, otp } = data;
   const isSend = await sendEmail({
     to: email,

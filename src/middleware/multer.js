@@ -5,7 +5,14 @@ export const allowedExtension = {
   image: ["image/png", "image/webp", "image/jpeg", "image/gif", "image/png"]
 }
 export function Multer(cusomExtension = []) {
-  const storage = multer.memoryStorage();
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, os.tmpdir());
+    },
+    filename: function (req, file, cb) {
+      cb(null, nanoid() + "-" + file.originalname);
+    }
+  });
   function fileFilter(req, file, cb) {
     if (!cusomExtension.includes(file.mimetype)) {
       cb(new Error("Invalid file type"));
