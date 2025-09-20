@@ -14,7 +14,7 @@ export async function signUp(req, res, next) {
   if (isUserExists) {
     throw new Error("user already exists", { cause: 400 });
   }
-  const hashPassword = hash({ plaintext: password });
+  const hashPassword = await hash({ plaintext: password });
   const encryptionPhone = encryption({ plaintext: phone, secretkey: process.env.PHONE_KEY });
   if (!req.file) {
     return res.status(400).json({ message: "Image is required" });
@@ -110,7 +110,7 @@ export async function signIn(req, res, next) {
       }
     }
   }
-  const isMatch = compare({ plaintext: password, ciphertext: user.password });
+  const isMatch = await compare({ plaintext: password, ciphertext: user.password });
   if (!isMatch) {
     throw new Error("wrong password", { cause: 409 });
   }
@@ -222,7 +222,7 @@ export async function updatePassword(req, res, next) {
   if (!isMatch) {
     throw new Error("wrong password", { cause: 409 });
   }
-  const hashPassword = hash({ plaintext: newPassword });
+  const hashPassword = await hash({ plaintext: newPassword });
   req.user.password = hashPassword;
   await req.user.save();
   return res.status(200).json({ message: "success" });
@@ -236,7 +236,7 @@ export async function forgetPassword(req, res, next) {
   }
   const otp = customAlphabet("0123456789", 4)();
   eventEmitter.emit("sendOtp", { email, otp });
-  const hashOtp = hash({ plaintext: otp });
+  const hashOtp = await hash({ plaintext: otp });
   user.otp = hashOtp;
   await user.save();
   return res.status(200).json({ message: "Otp Sent to your email" });
@@ -253,7 +253,7 @@ export async function resetPassword(req, res, next) {
   if (!isMatch) {
     throw new Error("wrong otp", { cause: 409 });
   }
-  const hashPassword = hash({ plaintext: newPassword });
+  const hashPassword = await hash({ plaintext: newPassword });
   await userModel.updateOne({ email }, {
     password: hashPassword,
     $unset: { otp: "" }

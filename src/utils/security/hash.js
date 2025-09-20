@@ -1,4 +1,4 @@
 import bcrypt from "bcrypt";
-export function hash({plaintext}) {
-  return bcrypt.hashSync(plaintext , Number(process.env.SALT_ROUNDS));
+export async function hash({plaintext}) {
+  return bcrypt.hash(plaintext , Number(process.env.SALT_ROUNDS));
 }
