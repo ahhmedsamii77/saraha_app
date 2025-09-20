@@ -17,7 +17,7 @@ export async function signUp(req, res, next) {
   const encryptionPhone = await encryption({ plaintext: phone, secretkey: process.env.PHONE_KEY });
   const otp = customAlphabet("0123456789", 4)();
   eventEmitter.emit("confirmEmail", { email, otp });
-  const hashedOtp = await hash({ plaintext: opt });
+  const hashedOtp = await hash({ plaintext: otp });
   const { secure_url, public_id } = await cloudinary.uploader.upload(req.file.path, {
     folder: "users"
   });
