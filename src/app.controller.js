@@ -16,7 +16,7 @@ export default function bootstrap({ app, express }) {
     statusCode: 429,
     skipSuccessfulRequests: true
   });
-
+  
   checkConnectionDB();
 
   cron.schedule("*/1 * * * * *", () => {

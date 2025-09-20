@@ -67,15 +67,19 @@ export async function confirmEmail(req, res, next) {
     }
   }
   if (otpInDb.expiresAt < Date.now()) {
+    await otpModel.deleteOne({ userId: user._id });
     eventEmitter.emit("confirmEmail", { email, id: user._id });
     throw new Error("otp expired and new code will be sent", { cause: 400 });
   }
-  if (otpInDb.attempts > 5) {
+
+  if (otpInDb.attempts >= 5) {
     user.isBanned = true;
     user.bannedAt = Date.now();
     await user.save();
-    throw new Error("you have reached the maximum number of attempts login afer 5 minutes to get new otp", { cause: 400 });
+    throw new Error("you have reached the maximum number of attempts. login after 5 minutes to get new otp", { cause: 400 });
   }
+
+
   const isMatch = await compare({ plaintext: otp, ciphertext: otpInDb.otp });
   if (!isMatch) {
     otpInDb.attempts++;
@@ -269,7 +273,7 @@ export async function resetPassword(req, res, next) {
     signature: user.role == userRoles.user ? process.env.REFERSH_TOKEN_USER : process.env.REFERSH_TOKEN_ADMIN,
     options: { expiresIn: "1y", jwtid }
   });
-  return res.status(200).json({ message: "success" , access_token, refersh_token });
+  return res.status(200).json({ message: "success", access_token, refersh_token });
 }
 // updte profile
 export async function updateProfile(req, res, next) {
