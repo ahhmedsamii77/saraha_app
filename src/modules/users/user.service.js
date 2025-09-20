@@ -50,6 +50,7 @@ export async function confirmEmail(req, res, next) {
     throw new Error("wrong otp", { cause: 409 });
   }
   user.confirmed = true;
+  user.otp = undefined;
   await user.save();
   return res.status(200).json({ message: "email confirmed" });
 }
