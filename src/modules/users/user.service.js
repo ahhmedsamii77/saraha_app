@@ -16,7 +16,6 @@ export async function signUp(req, res, next) {
   }
   const hashPassword = await hash({ plaintext: password });
   const encryptionPhone = encryption({ plaintext: phone, secretkey: process.env.PHONE_KEY });
-  eventEmitter.emit("confirmEmail", { email, id: user._id });
   if (!req.file) {
     return res.status(400).json({ message: "Image is required" });
   }
@@ -38,7 +37,8 @@ export async function signUp(req, res, next) {
     }
   });
   
-
+  eventEmitter.emit("confirmEmail", { email, id: user._id });
+ 
   return res.status(201).json({ message: "User created. Please check your email to confirm your account", user });
 }
 
