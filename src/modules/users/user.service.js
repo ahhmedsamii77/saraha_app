@@ -18,9 +18,17 @@ export async function signUp(req, res, next) {
   const otp = customAlphabet("0123456789", 4)();
   eventEmitter.emit("confirmEmail", { email, otp });
   const hashedOtp = await hash({ plaintext: otp });
-  const { secure_url, public_id } = await cloudinary.uploader.upload(req.file.path, {
-    folder: "users"
-  });
+
+  let profileImage = {};
+  if (req?.file) {
+    const { secure_url, public_id } = await cloudinary.uploader.upload(req.file.path, {
+      folder: "users"
+    });
+    profileImage = {
+      secure_url,
+      public_id
+    }
+  }
   const user = await userModel.create({
     name,
     email,
@@ -29,10 +37,7 @@ export async function signUp(req, res, next) {
     otp: hashedOtp,
     phone: encryptionPhone,
     gender,
-    profileImage: {
-      secure_url,
-      public_id
-    }
+    profileImage
   });
   return res.status(201).json({ message: "User created. Please check your email to confirm your account", user });
 }
@@ -67,7 +72,7 @@ export async function signIn(req, res, next) {
     throw new Error("wrong password", { cause: 409 });
   }
   const jwtid = nanoid();
-  
+
   const access_token = generateToken({
     payload: { id: user._id },
     signature: user.role == userRoles.user ? process.env.ACCESS_TOKEN_USER : process.env.ACCESS_TOKEN_ADMIN,
